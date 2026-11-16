@@ -18,34 +18,47 @@ def calculate_binary_metrics(
     threshold: float = 0.5,
 ) -> dict:
     """Calculate binary-classification metrics at a fixed decision threshold."""
-    y_true = np.asarray(labels, dtype=int).reshape(-1)
-    y_score = np.asarray(probabilities, dtype=float).reshape(-1)
+    try:
+        numeric_labels = np.asarray(labels, dtype=float).reshape(-1)
+        y_score = np.asarray(probabilities, dtype=float).reshape(-1)
+    except (TypeError, ValueError) as error:
+        raise ValueError("Labels and probabilities must be numeric.") from error
 
-    if y_true.size == 0:
+    if numeric_labels.size == 0:
         raise ValueError("Cannot evaluate an empty set of predictions.")
-    if y_true.size != y_score.size:
+    if numeric_labels.size != y_score.size:
         raise ValueError("Labels and probabilities must have the same length.")
-    if not np.isin(y_true, [0, 1]).all():
+    if not np.isfinite(numeric_labels).all():
+        raise ValueError("Labels must contain only finite binary values.")
+    if not np.isin(numeric_labels, [0.0, 1.0]).all():
         raise ValueError("Labels must contain only binary values 0 or 1.")
+
     if not np.isfinite(y_score).all():
         raise ValueError("Probabilities must all be finite numbers.")
     if ((y_score < 0) | (y_score > 1)).any():
         raise ValueError("Probabilities must be between 0 and 1.")
-    if not 0.0 <= threshold <= 1.0:
+
+    try:
+        threshold_value = float(threshold)
+    except (TypeError, ValueError) as error:
+        raise ValueError("Decision threshold must be a finite number.") from error
+    if not np.isfinite(threshold_value) or not 0.0 <= threshold_value <= 1.0:
         raise ValueError("Decision threshold must be between 0 and 1.")
+
+    y_true = numeric_labels.astype(int)
     if np.unique(y_true).size != 2:
         raise ValueError(
             "ROC-AUC evaluation requires both classes in the evaluation set."
         )
 
-    predictions = (y_score >= threshold).astype(int)
+    predictions = (y_score >= threshold_value).astype(int)
     matrix = confusion_matrix(y_true, predictions, labels=[0, 1])
     true_negative, false_positive, false_negative, true_positive = (
         int(value) for value in matrix.ravel()
     )
 
     return {
-        "threshold": float(threshold),
+        "threshold": threshold_value,
         "sample_count": int(y_true.size),
         "class_counts": {
             "no_finding": int((y_true == 0).sum()),
