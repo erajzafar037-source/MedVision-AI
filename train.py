@@ -1,5 +1,7 @@
 from pathlib import Path
+import random
 
+import numpy as np
 import torch
 import torch.nn as nn
 from sklearn.metrics import roc_auc_score
@@ -10,6 +12,7 @@ from torchvision.models import ResNet18_Weights, resnet18
 from dataset import ChestXrayDataset
 
 
+SEED = 42
 BATCH_SIZE = 32
 EPOCHS = 3
 LEARNING_RATE = 0.001
@@ -42,15 +45,29 @@ def evaluate_model(model, loader, loss_function):
 
     average_loss = total_loss / len(loader)
 
-    try:
-        auc = roc_auc_score(all_labels, all_probabilities)
-    except ValueError:
-        auc = 0.0
+    if len(set(all_labels)) != 2:
+        raise ValueError(
+            "Validation split must contain both classes to calculate ROC-AUC."
+        )
+    auc = roc_auc_score(all_labels, all_probabilities)
 
     return average_loss, auc
 
 
+def set_reproducible_seed(seed: int = SEED) -> None:
+    """Seed common random-number generators for repeatable experiments."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
 def main():
+    set_reproducible_seed()
+    print(f"Using seed: {SEED}")
     print("Using device:", DEVICE)
 
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -122,6 +139,11 @@ def main():
     negative_count = int(
         (train_dataset.labels["label"] == 0).sum()
     )
+
+    if positive_count == 0 or negative_count == 0:
+        raise ValueError(
+            "Training split must contain both No Finding and Pneumonia samples."
+        )
 
     positive_weight = negative_count / positive_count
 

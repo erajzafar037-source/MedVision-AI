@@ -17,3 +17,15 @@ Thumbs.db
 
 # VS Code
 .vscode/
+
+# Generated artefacts and local configuration
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+*.log
+models/test_metrics.json
