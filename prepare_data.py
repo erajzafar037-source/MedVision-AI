@@ -22,8 +22,8 @@ def create_patient_splits(
         raise ValueError("Patient ID contains missing values; cannot guarantee patient-level separation.")
 
     patient_ids = dataframe["Patient ID"].drop_duplicates().to_numpy()
-    if len(patient_ids) < 3:
-        raise ValueError("At least three distinct patients are required for train/validation/test splits.")
+    if len(patient_ids) < 4:
+        raise ValueError("At least four distinct patients are required for train/validation/test splits.")
 
     train_patients, remaining_patients = train_test_split(
         patient_ids,
