@@ -130,3 +130,17 @@ def test_patient_splits_reject_missing_patient_ids():
 
     with pytest.raises(ValueError, match="missing values"):
         create_patient_splits(dataframe)
+
+
+
+def test_patient_splits_require_enough_distinct_patients():
+    dataframe = pd.DataFrame(
+        {
+            "Patient ID": [1, 2, 3],
+            "Image Index": ["a.png", "b.png", "c.png"],
+            "label": [0, 1, 0],
+        }
+    )
+
+    with pytest.raises(ValueError, match="At least four"):
+        create_patient_splits(dataframe)
