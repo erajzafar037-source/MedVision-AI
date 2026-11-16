@@ -24,9 +24,11 @@ def test_binary_metrics_match_expected_confusion_matrix():
         ([], [], 0.5, "empty"),
         ([0, 1], [0.2], 0.5, "same length"),
         ([0, 2], [0.2, 0.8], 0.5, "binary"),
+        ([0, 0.5], [0.2, 0.8], 0.5, "binary"),
         ([0, 1], [0.2, float("nan")], 0.5, "finite"),
         ([0, 1], [0.2, 1.2], 0.5, "between 0 and 1"),
         ([0, 1], [0.2, 0.8], 1.5, "threshold"),
+        ([0, 1], [0.2, 0.8], float("nan"), "threshold"),
         ([0, 0], [0.2, 0.3], 0.5, "both classes"),
     ],
 )
