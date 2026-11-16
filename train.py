@@ -45,10 +45,11 @@ def evaluate_model(model, loader, loss_function):
 
     average_loss = total_loss / len(loader)
 
-    try:
-        auc = roc_auc_score(all_labels, all_probabilities)
-    except ValueError:
-        auc = 0.0
+    if len(set(all_labels)) != 2:
+        raise ValueError(
+            "Validation split must contain both classes to calculate ROC-AUC."
+        )
+    auc = roc_auc_score(all_labels, all_probabilities)
 
     return average_loss, auc
 
@@ -138,6 +139,11 @@ def main():
     negative_count = int(
         (train_dataset.labels["label"] == 0).sum()
     )
+
+    if positive_count == 0 or negative_count == 0:
+        raise ValueError(
+            "Training split must contain both No Finding and Pneumonia samples."
+        )
 
     positive_weight = negative_count / positive_count
 
